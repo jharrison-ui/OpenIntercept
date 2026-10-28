@@ -43,18 +43,18 @@ OpenIntercept puts that boundary under a human's hand.
 - [x] **Rules engine** - tool, stage, args-regex, and result-regex matching with one-click templates, import/export, live match counts
 - [x] **Intercept queue** - live countdowns, timeout policy (forward or drop)
 - [x] **Decision timeline** - who decided what, by which rule, on every call
-- [x] **Opt-in model HTTP capture** - bounded bodies, credentials redacted
-- [x] **Opt-in plaintext HTTP proxy** - HTTPS CONNECT is tunnelled, never decrypted
-- [x] **Append-only JSONL audit log** - the durable local record of everything observed
+- [x] **Opt-in model HTTP capture** - bounded bodies, credentials redacted (panel → Settings)
+- [x] **Opt-in plaintext HTTP proxy** - listens on `127.0.0.1:7475`, HTTPS CONNECT is tunnelled, never decrypted (panel → Settings)
+- [x] **Append-only JSONL audit log** - the durable local record of everything observed (`data/audit.jsonl`, next to the repo; `~/.openintercept/data/` for the one-click install)
 - [x] **One-click install** - Windows and Unix, with copy-paste fallback for custom plugin folders
-- [ ] ~~TLS MITM / local CA~~ - intentionally out of scope
-- [ ] ~~Telemetry~~ - intentionally zero
+
+**Intentionally not included:** TLS MITM / local CA, telemetry.
 
 ![Intercept queue](docs/img/intercept.png)
 
 ## Install
 
-**One click - any machine with OpenCode:**
+**One click - any machine with OpenCode and `git`** (Bun ≥ 1.1 is installed automatically if missing):
 
 ```powershell
 # Windows (PowerShell)
@@ -67,8 +67,8 @@ curl -fsSL https://raw.githubusercontent.com/asucodes/OpenIntercept/main/scripts
 ```
 
 The installer: ensures [Bun](https://bun.sh) is present, clones the repo to
-`~/.openintercept`, writes the adapter into `~/.config/opencode/plugins`
-(OpenCode's default even on Windows), starts the sidecar, and prints the panel
+`~/.openintercept`, writes the adapter (`openintercept.ts` and its V2 variant `openintercept-v2.ts`) into
+`~/.config/opencode/plugins` (OpenCode's default even on Windows), starts the sidecar, and prints the panel
 URL. Re-running it updates everything in place.
 
 **Custom plugins folder?**
@@ -87,13 +87,20 @@ curl -fsSL https://raw.githubusercontent.com/asucodes/OpenIntercept/main/scripts
 git clone https://github.com/asucodes/OpenIntercept.git
 cd OpenIntercept
 bun install
-bun run start
+bun run start                              # sidecar + panel
+
+# in a second terminal - install the adapter:
+bun scripts/install-plugin.ts --global     # all projects
+bun scripts/install-plugin.ts ./your-project   # or one project only
 ```
 
 The panel is at <http://127.0.0.1:7474>. Restart OpenCode so it loads the
 adapter.
 
 ## Try it
+
+Open the panel and turn **Intercept** on (top bar, or press `I`) - it is off by default.
+Then run the command:
 
 ```bash
 opencode run "Fetch https://example.com and tell me what the page says"
@@ -102,6 +109,15 @@ opencode run "Fetch https://example.com and tell me what the page says"
 The `webfetch` call appears in the panel and OpenCode pauses mid-call. Press
 **Spoof result**, write any text, apply - and watch the model describe the page
 you invented, not the real one. That is the trust boundary in your hands.
+
+## Configuration
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `OPENINTERCEPT_PORT` | `7474` | Sidecar and panel port |
+| `OPENINTERCEPT_HOST` | `127.0.0.1` | Bind address (local only by design) |
+| `OPENINTERCEPT_PROXY_PORT` | `7475` | Port of the opt-in HTTP proxy |
+| `OPENINTERCEPT_URL` | `http://127.0.0.1:7474` | Where the adapter looks for the sidecar (set it if you changed the port) |
 
 ## Scope & limits
 
